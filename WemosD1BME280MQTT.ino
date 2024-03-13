@@ -232,7 +232,15 @@ void mqttConnect()
    }
 } // End of mqttConnect() function.
 
-[[noreturn]] void setup()
+
+[[noreturn]] void infiniteLoop()
+{
+   while( true )
+      delay( 10 );
+}
+
+
+void setup()
 {
    // Give time to connect to serial after a flash.
    delay( 1000 );
@@ -255,8 +263,7 @@ void mqttConnect()
       Serial.print( "        ID of 0x61 represents a BME 680.\n" );
       Serial.println( "\n" );
       Serial.println( "Going into an infinite delay loop!" );
-      while( true )
-         delay( 10 );
+      infiniteLoop();
    }
    Serial.println();
 }

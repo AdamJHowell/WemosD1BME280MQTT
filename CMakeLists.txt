@@ -14,6 +14,7 @@ include_directories( .
 
 add_executable( WemosD1BME280MQTT
     WemosD1BME280MQTT.ino
-    PubSubClient.cpp )
+    PubSubClient.cpp
+    privateInfo.h )
 
 set_target_properties( WemosD1BME280MQTT PROPERTIES LINKER_LANGUAGE CXX )
