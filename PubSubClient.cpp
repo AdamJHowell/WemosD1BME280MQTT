@@ -1,4 +1,5 @@
 /*
+
   PubSubClient.cpp - A simple client for MQTT.
   Nick O'Leary
   http://knolleary.net
@@ -9,9 +10,9 @@
 
 PubSubClient::PubSubClient() {
     this->_state = MQTT_DISCONNECTED;
-    this->_client = NULL;
-    this->stream = NULL;
-    setCallback(NULL);
+    this->_client = nullptr;
+    this->stream = nullptr;
+    setCallback(nullptr);
     this->bufferSize = 0;
     setBufferSize(MQTT_MAX_PACKET_SIZE);
     setKeepAlive(MQTT_KEEPALIVE);
@@ -21,7 +22,7 @@ PubSubClient::PubSubClient() {
 PubSubClient::PubSubClient(Client& client) {
     this->_state = MQTT_DISCONNECTED;
     setClient(client);
-    this->stream = NULL;
+    this->stream = nullptr;
     this->bufferSize = 0;
     setBufferSize(MQTT_MAX_PACKET_SIZE);
     setKeepAlive(MQTT_KEEPALIVE);
@@ -32,7 +33,7 @@ PubSubClient::PubSubClient(IPAddress addr, uint16_t port, Client& client) {
     this->_state = MQTT_DISCONNECTED;
     setServer(addr, port);
     setClient(client);
-    this->stream = NULL;
+    this->stream = nullptr;
     this->bufferSize = 0;
     setBufferSize(MQTT_MAX_PACKET_SIZE);
     setKeepAlive(MQTT_KEEPALIVE);
@@ -53,7 +54,7 @@ PubSubClient::PubSubClient(IPAddress addr, uint16_t port, MQTT_CALLBACK_SIGNATUR
     setServer(addr, port);
     setCallback(callback);
     setClient(client);
-    this->stream = NULL;
+    this->stream = nullptr;
     this->bufferSize = 0;
     setBufferSize(MQTT_MAX_PACKET_SIZE);
     setKeepAlive(MQTT_KEEPALIVE);
@@ -75,7 +76,7 @@ PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, Client& client) {
     this->_state = MQTT_DISCONNECTED;
     setServer(ip, port);
     setClient(client);
-    this->stream = NULL;
+    this->stream = nullptr;
     this->bufferSize = 0;
     setBufferSize(MQTT_MAX_PACKET_SIZE);
     setKeepAlive(MQTT_KEEPALIVE);
@@ -96,7 +97,7 @@ PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, MQTT_CALLBACK_SIGNATURE, 
     setServer(ip, port);
     setCallback(callback);
     setClient(client);
-    this->stream = NULL;
+    this->stream = nullptr;
     this->bufferSize = 0;
     setBufferSize(MQTT_MAX_PACKET_SIZE);
     setKeepAlive(MQTT_KEEPALIVE);
@@ -118,7 +119,7 @@ PubSubClient::PubSubClient(const char* domain, uint16_t port, Client& client) {
     this->_state = MQTT_DISCONNECTED;
     setServer(domain,port);
     setClient(client);
-    this->stream = NULL;
+    this->stream = nullptr;
     this->bufferSize = 0;
     setBufferSize(MQTT_MAX_PACKET_SIZE);
     setKeepAlive(MQTT_KEEPALIVE);
@@ -139,7 +140,7 @@ PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGN
     setServer(domain,port);
     setCallback(callback);
     setClient(client);
-    this->stream = NULL;
+    this->stream = nullptr;
     this->bufferSize = 0;
     setBufferSize(MQTT_MAX_PACKET_SIZE);
     setKeepAlive(MQTT_KEEPALIVE);
@@ -162,19 +163,19 @@ PubSubClient::~PubSubClient() {
 }
 
 boolean PubSubClient::connect(const char *id) {
-    return connect(id,NULL,NULL,0,0,0,0,1);
+    return connect(id,nullptr,nullptr, nullptr,0, false, nullptr, true );
 }
 
 boolean PubSubClient::connect(const char *id, const char *user, const char *pass) {
-    return connect(id,user,pass,0,0,0,0,1);
+    return connect(id,user,pass, nullptr,0, false, nullptr, true);
 }
 
 boolean PubSubClient::connect(const char *id, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage) {
-    return connect(id,NULL,NULL,willTopic,willQos,willRetain,willMessage,1);
+    return connect(id,nullptr,nullptr,willTopic,willQos,willRetain,willMessage, true );
 }
 
 boolean PubSubClient::connect(const char *id, const char *user, const char *pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage) {
-    return connect(id,user,pass,willTopic,willQos,willRetain,willMessage,1);
+    return connect(id,user,pass,willTopic,willQos,willRetain,willMessage, true );
 }
 
 boolean PubSubClient::connect(const char *id, const char *user, const char *pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage, boolean cleanSession) {
@@ -185,7 +186,7 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
         if(_client->connected()) {
             result = 1;
         } else {
-            if (domain != NULL) {
+            if (domain != nullptr) {
                 result = _client->connect(this->domain, this->port);
             } else {
                 result = _client->connect(this->ip, this->port);
@@ -196,7 +197,6 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
             nextMsgId = 1;
             // Leave room in the buffer for header and variable length field
             uint16_t length = MQTT_MAX_HEADER_SIZE;
-            unsigned int j;
 
 #if MQTT_VERSION == MQTT_VERSION_3_1
             uint8_t d[9] = {0x00,0x06,'M','Q','I','s','d','p', MQTT_VERSION};
@@ -205,7 +205,7 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
             uint8_t d[7] = {0x00,0x04,'M','Q','T','T',MQTT_VERSION};
 #define MQTT_HEADER_VERSION_LENGTH 7
 #endif
-            for (j = 0;j<MQTT_HEADER_VERSION_LENGTH;j++) {
+            for ( unsigned int j = 0;j<MQTT_HEADER_VERSION_LENGTH;j++) {
                 this->buffer[length++] = d[j];
             }
 
@@ -219,10 +219,10 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
                 v = v|0x02;
             }
 
-            if(user != NULL) {
+            if(user != nullptr) {
                 v = v|0x80;
 
-                if(pass != NULL) {
+                if(pass != nullptr) {
                     v = v|(0x80>>1);
                 }
             }
@@ -240,10 +240,10 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
                 length = writeString(willMessage,this->buffer,length);
             }
 
-            if(user != NULL) {
+            if(user != nullptr) {
                 CHECK_STRING_LENGTH(length,user)
                 length = writeString(user,this->buffer,length);
-                if(pass != NULL) {
+                if(pass != nullptr) {
                     CHECK_STRING_LENGTH(length,pass)
                     length = writeString(pass,this->buffer,length);
                 }
@@ -347,10 +347,8 @@ uint32_t PubSubClient::readPacket(uint8_t* lengthLength) {
 
     for (uint32_t i = start;i<length;i++) {
         if(!readByte(&digit)) return 0;
-        if (this->stream) {
-            if (isPublish && idx-*lengthLength-2>skip) {
-                this->stream->write(digit);
-            }
+        if (this->stream && isPublish && idx-*lengthLength-2>skip) {
+           this->stream->write(digit);
         }
 
         if (len < this->bufferSize) {
@@ -455,8 +453,7 @@ boolean PubSubClient::publish(const char* topic, const uint8_t* payload, unsigne
         length = writeString(topic,this->buffer,length);
 
         // Add payload
-        uint16_t i;
-        for (i=0;i<plength;i++) {
+		  for ( unsigned int i=0; i < plength; i++ ) {
             this->buffer[length++] = payload[i];
         }
 
@@ -607,7 +604,7 @@ boolean PubSubClient::subscribe(const char* topic) {
 
 boolean PubSubClient::subscribe(const char* topic, uint8_t qos) {
     size_t topicLength = strnlen(topic, this->bufferSize);
-    if (topic == 0) {
+    if (topic == nullptr ) {
         return false;
     }
     if (qos > 1) {
@@ -635,7 +632,7 @@ boolean PubSubClient::subscribe(const char* topic, uint8_t qos) {
 
 boolean PubSubClient::unsubscribe(const char* topic) {
 	size_t topicLength = strnlen(topic, this->bufferSize);
-    if (topic == 0) {
+    if (topic == nullptr ) {
         return false;
     }
     if (this->bufferSize < 9 + topicLength) {
@@ -682,7 +679,7 @@ uint16_t PubSubClient::writeString(const char* string, uint8_t* buf, uint16_t po
 
 boolean PubSubClient::connected() {
     boolean rc;
-    if (_client == NULL ) {
+    if (_client == nullptr ) {
         rc = false;
     } else {
         rc = (int)_client->connected();
@@ -707,7 +704,7 @@ PubSubClient& PubSubClient::setServer(uint8_t * ip, uint16_t port) {
 PubSubClient& PubSubClient::setServer(IPAddress ip, uint16_t port) {
     this->ip = ip;
     this->port = port;
-    this->domain = NULL;
+    this->domain = nullptr;
     return *this;
 }
 
@@ -745,14 +742,14 @@ boolean PubSubClient::setBufferSize(uint16_t size) {
         this->buffer = (uint8_t*)malloc(size);
     } else {
         uint8_t* newBuffer = (uint8_t*)realloc(this->buffer, size);
-        if (newBuffer != NULL) {
+        if (newBuffer != nullptr ) {
             this->buffer = newBuffer;
         } else {
             return false;
         }
     }
     this->bufferSize = size;
-    return (this->buffer != NULL);
+    return (this->buffer != nullptr );
 }
 
 uint16_t PubSubClient::getBufferSize() {

@@ -36,33 +36,26 @@ void readTelemetry()
 /**
  * @brief lookupWifiCode() will return the string for an integer code.
  */
-void lookupWifiCode( int code, char *buffer )
+String lookupWifiCode( int code )
 {
    switch( code )
    {
       case 0:
-         snprintf( buffer, 26, "%s", "Idle" );
-         break;
+         return "Idle";
       case 1:
-         snprintf( buffer, 26, "%s", "No SSID" );
-         break;
+         return "No SSID";
       case 2:
-         snprintf( buffer, 26, "%s", "Scan completed" );
-         break;
+         return "Scan completed";
       case 3:
-         snprintf( buffer, 26, "%s", "Connected" );
-         break;
+         return "Connected";
       case 4:
-         snprintf( buffer, 26, "%s", "Connection failed" );
-         break;
+         return "Connection failed";
       case 5:
-         snprintf( buffer, 26, "%s", "Connection lost" );
-         break;
+         return "Connection lost";
       case 6:
-         snprintf( buffer, 26, "%s", "Disconnected" );
-         break;
+         return "Disconnected";
       default:
-         snprintf( buffer, 26, "%s", "Unknown Wi-Fi status code" );
+         return "Unknown Wi-Fi status code";
    }
 } // End of lookupWifiCode() function.
 
@@ -70,42 +63,32 @@ void lookupWifiCode( int code, char *buffer )
 /**
  * @brief lookupMQTTCode() will return the string for an integer state code.
  */
-void lookupMQTTCode( int code, char *buffer )
+String lookupMQTTCode( int code )
 {
    switch( code )
    {
       case -4:
-         snprintf( buffer, 29, "%s", "Connection timeout" );
-         break;
+         return "Connection timeout";
       case -3:
-         snprintf( buffer, 29, "%s", "Connection lost" );
-         break;
+         return "Connection lost";
       case -2:
-         snprintf( buffer, 29, "%s", "Connect failed" );
-         break;
+         return "Connect failed";
       case -1:
-         snprintf( buffer, 29, "%s", "Disconnected" );
-         break;
+         return "Disconnected";
       case 0:
-         snprintf( buffer, 29, "%s", "Connected" );
-         break;
+         return "Connected";
       case 1:
-         snprintf( buffer, 29, "%s", "Bad protocol" );
-         break;
+         return "Bad protocol";
       case 2:
-         snprintf( buffer, 29, "%s", "Bad client ID" );
-         break;
+         return "Bad client ID";
       case 3:
-         snprintf( buffer, 29, "%s", "Unavailable" );
-         break;
+         return "Unavailable";
       case 4:
-         snprintf( buffer, 29, "%s", "Bad credentials" );
-         break;
+         return "Bad credentials";
       case 5:
-         snprintf( buffer, 29, "%s", "Unauthorized" );
-         break;
+         return "Unauthorized";
       default:
-         snprintf( buffer, 29, "%s", "Unknown MQTT state code" );
+         return "Unknown MQTT state code";
    }
 } // End of lookupMQTTCode() function.
 
@@ -121,9 +104,8 @@ void printValues()
    Serial.println( "Wi-Fi info:" );
    Serial.printf( "  MAC address: %s\n", macAddress );
    int wifiStatusCode = WiFi.status();
-   char buffer[29]    = "";
-   lookupWifiCode( wifiStatusCode, buffer );
-   Serial.printf( "  Wi-Fi status text: %s\n", buffer );
+   String wifiStatusString = lookupWifiCode( wifiStatusCode );
+   Serial.printf( "  Wi-Fi status text: %s\n", wifiStatusString.c_str() );
    Serial.printf( "  Wi-Fi status code: %d\n", wifiStatusCode );
    if( wifiStatusCode == 3 )
    {
@@ -134,9 +116,8 @@ void printValues()
 
    Serial.println( "MQTT info:" );
    Serial.printf( "  Broker: %s:%d\n", BROKER_IP, port );
-   int mqttStateCode = mqttClient.state();
-   lookupMQTTCode( mqttStateCode, buffer );
-   Serial.printf( "  MQTT state: %s\n", buffer );
+   String mqttStateString = lookupMQTTCode( mqttClient.state() );
+   Serial.printf( "  MQTT state: %s\n", mqttStateString.c_str() );
    if( mqttClient.connected() )
    {
       Serial.print( "  MQTT broker domain: " );
@@ -146,22 +127,17 @@ void printValues()
       Serial.print( "  MQTT broker port: " );
       Serial.println( mqttClient.getServerPort() );
    }
+
    float tempC          = bme280.readTemperature();
    float tempF          = ( tempC * 1.8F ) + 32;
    float pressureHpa    = bme280.readPressure() / 100.0F;
    float altitudeMeters = bme280.readAltitude( seaLevelPressureHpa );
    float humidity       = bme280.readHumidity();
-
    Serial.printf( "Temperature: %.2f °C\n", tempC );
-
    Serial.printf( "Temperature: %.2f °F\n", tempF );
-
    Serial.printf( "Pressure: %.2f hPa\n", pressureHpa );
-
    Serial.printf( "Humidity: %.2f %%\n", humidity );
-
    Serial.printf( "Altitude: %.1f m\n", altitudeMeters );
-
    Serial.println();
 }
 
@@ -220,9 +196,8 @@ void mqttConnect()
       else
       {
          int mqttStateCode = mqttClient.state();
-         char buffer[29];
-         lookupMQTTCode( mqttStateCode, buffer );
-         Serial.printf( "  MQTT state: %s\n", buffer );
+         String mqttStateString = lookupMQTTCode( mqttStateCode );
+         Serial.printf( "  MQTT state: %s\n", mqttStateString.c_str() );
          Serial.printf( "  MQTT state code: %d\n", mqttStateCode );
          return;
       }
@@ -268,6 +243,13 @@ void setup()
 
 void loop()
 {
+   if( wifiClient.status() != WL_CONNECTED )
+      wifiBasicConnect();
+   else if( !mqttClient.connected() )
+      mqttConnect();
+   else
+      mqttClient.loop();
+
    if( lastPrintTime == 0 || ( ( millis() - lastPrintTime ) > printInterval ) )
    {
       printValues();
