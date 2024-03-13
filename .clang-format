@@ -31,9 +31,9 @@ AlwaysBreakAfterReturnType:                None
 AlwaysBreakTemplateDeclarations:           Yes
 BreakBeforeBraces:                         Custom
 BraceWrapping:
-  AfterCaseLabel:        false
+  AfterCaseLabel:        true
   AfterClass:            true
-  AfterControlStatement: Always
+  AfterControlStatement: MultiLine
   AfterEnum:             true
   AfterFunction:         true
   AfterNamespace:        true

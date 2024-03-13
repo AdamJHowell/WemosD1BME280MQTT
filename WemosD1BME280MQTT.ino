@@ -66,6 +66,7 @@ void lookupWifiCode( int code, char *buffer )
    }
 } // End of lookupWifiCode() function.
 
+
 /**
  * @brief lookupMQTTCode() will return the string for an integer state code.
  */
@@ -192,8 +193,7 @@ void wifiBasicConnect()
    {
       // Print that Wi-Fi has connected.
       Serial.println( "\nWi-Fi connection established!" );
-      snprintf( ipAddress, 16, "%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2],
-                WiFi.localIP()[3] );
+      snprintf( ipAddress, 16, "%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3] );
       // Turn the LED on to show that Wi-Fi is connected.
       digitalWrite( ONBOARD_LED, HIGH );
       return;
@@ -232,13 +232,11 @@ void mqttConnect()
    }
 } // End of mqttConnect() function.
 
-
 [[noreturn]] void infiniteLoop()
 {
    while( true )
       delay( 10 );
 }
-
 
 void setup()
 {
