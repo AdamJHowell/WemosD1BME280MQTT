@@ -1,0 +1,7 @@
+cmake-build-*/
+.idea/
+*.iml
+privateInfo.*
+debug_custom.json
+*.svd
+debug.cfg
