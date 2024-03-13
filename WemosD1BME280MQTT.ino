@@ -13,6 +13,10 @@ PubSubClient mqttClient( wifiClient );
 const float seaLevelPressureHpa     = 1013.25;
 const unsigned int printInterval    = 10000; // How long to wait between stat printouts.
 unsigned long lastPrintTime         = 0;     // The last time a MQTT publish was performed.
+const unsigned int pollInterval     = 5000;  // How long to wait between polling telemetry.
+unsigned long lastPollTime          = 0;     // The last time a telemetry poll was performed.
+const unsigned int publishInterval  = 20000; // How long to wait between publishing telemetry.
+unsigned long lastPublishTime       = 0;     // The last time a telemetry publish was performed.
 unsigned long lastBrokerConnect     = 0;     // The last time a MQTT broker connection was attempted.
 unsigned long brokerCoolDown        = 7000;  // How long to wait between MQTT broker connection attempts.
 unsigned long wifiConnectionTimeout = 15000; // The amount of time to wait for a Wi-Fi connection.
@@ -24,13 +28,29 @@ unsigned long printCount       = 0;          // A counter of how many times the 
 unsigned long lastLedBlinkTime = 0;          // The last time LED was blinked.
 const unsigned int ONBOARD_LED = 2;          // The GPIO which the onboard LED is connected to.
 const uint16_t port            = 1883;       // The broker port.
+const String rssiTopic         = "Office/WemosD1/rssi";
+const String tempCTopic        = "Office/WemosD1/bme280/tempC";
+const String tempFTopic        = "Office/WemosD1/bme280/tempF";
+const String humidityTopic     = "Office/WemosD1/bme280/humidity";
+const String pressureTopic     = "Office/WemosD1/bme280/pressure";
+const String altitudeTopic     = "Office/WemosD1/bme280/altitude";
+float tempC                    = 21.12F;
+float tempF                    = 21.12F;
+float pressureHpa              = 21.12F;
+float altitudeMeters           = 21.12F;
+float humidity                 = 21.12F;
 
 /**
  * @brief readTelemetry() will read the telemetry and save values to global variables.
  */
-void readTelemetry()
+void pollTelemetry()
 {
-   rssi = WiFi.RSSI();
+   rssi           = WiFi.RSSI();
+   tempC          = bme280.readTemperature();
+   tempF          = ( tempC * 1.8F ) + 32;
+   pressureHpa    = bme280.readPressure() / 100.0F;
+   altitudeMeters = bme280.readAltitude( seaLevelPressureHpa );
+   humidity       = bme280.readHumidity();
 } // End of readTelemetry() function.
 
 /**
@@ -58,7 +78,6 @@ String lookupWifiCode( int code )
          return "Unknown Wi-Fi status code";
    }
 } // End of lookupWifiCode() function.
-
 
 /**
  * @brief lookupMQTTCode() will return the string for an integer state code.
@@ -92,7 +111,7 @@ String lookupMQTTCode( int code )
    }
 } // End of lookupMQTTCode() function.
 
-void printValues()
+void printTelemetry()
 {
    Serial.println();
    printCount++;
@@ -103,7 +122,7 @@ void printValues()
 
    Serial.println( "Wi-Fi info:" );
    Serial.printf( "  MAC address: %s\n", macAddress );
-   int wifiStatusCode = WiFi.status();
+   int wifiStatusCode      = WiFi.status();
    String wifiStatusString = lookupWifiCode( wifiStatusCode );
    Serial.printf( "  Wi-Fi status text: %s\n", wifiStatusString.c_str() );
    Serial.printf( "  Wi-Fi status code: %d\n", wifiStatusCode );
@@ -128,17 +147,35 @@ void printValues()
       Serial.println( mqttClient.getServerPort() );
    }
 
-   float tempC          = bme280.readTemperature();
-   float tempF          = ( tempC * 1.8F ) + 32;
-   float pressureHpa    = bme280.readPressure() / 100.0F;
-   float altitudeMeters = bme280.readAltitude( seaLevelPressureHpa );
-   float humidity       = bme280.readHumidity();
+   tempC          = bme280.readTemperature();
+   tempF          = ( tempC * 1.8F ) + 32;
+   pressureHpa    = bme280.readPressure() / 100.0F;
+   altitudeMeters = bme280.readAltitude( seaLevelPressureHpa );
+   humidity       = bme280.readHumidity();
    Serial.printf( "Temperature: %.2f °C\n", tempC );
    Serial.printf( "Temperature: %.2f °F\n", tempF );
    Serial.printf( "Pressure: %.2f hPa\n", pressureHpa );
    Serial.printf( "Humidity: %.2f %%\n", humidity );
    Serial.printf( "Altitude: %.1f m\n", altitudeMeters );
    Serial.println();
+}
+
+void publishTelemetry()
+{
+   // Load the latest values into Strings.
+   auto tempCValue    = String( tempC );
+   auto tempFValue    = String( tempF );
+   auto pressureValue = String( pressureHpa );
+   auto altitudeValue = String( altitudeMeters );
+   auto humidityValue = String( humidity );
+   auto rssiValue     = String( rssi );
+   // Publish the values.
+   mqttClient.publish( rssiTopic.c_str(), rssiValue.c_str() );
+   mqttClient.publish( tempCTopic.c_str(), tempCValue.c_str() );
+   mqttClient.publish( tempFTopic.c_str(), tempFValue.c_str() );
+   mqttClient.publish( pressureTopic.c_str(), pressureValue.c_str() );
+   mqttClient.publish( humidityTopic.c_str(), humidityValue.c_str() );
+   mqttClient.publish( altitudeTopic.c_str(), altitudeValue.c_str() );
 }
 
 /**
@@ -195,7 +232,7 @@ void mqttConnect()
          Serial.print( "Connected to MQTT Broker.\n" );
       else
       {
-         int mqttStateCode = mqttClient.state();
+         int mqttStateCode      = mqttClient.state();
          String mqttStateString = lookupMQTTCode( mqttStateCode );
          Serial.printf( "  MQTT state: %s\n", mqttStateString.c_str() );
          Serial.printf( "  MQTT state code: %d\n", mqttStateCode );
@@ -250,9 +287,19 @@ void loop()
    else
       mqttClient.loop();
 
+   if( lastPollTime == 0 || ( ( millis() - lastPollTime ) > pollInterval ) )
+   {
+      pollTelemetry();
+      lastPollTime = millis();
+   }
    if( lastPrintTime == 0 || ( ( millis() - lastPrintTime ) > printInterval ) )
    {
-      printValues();
+      printTelemetry();
       lastPrintTime = millis();
+   }
+   if( lastPublishTime == 0 || ( ( millis() - lastPublishTime ) > publishInterval ) )
+   {
+      publishTelemetry();
+      lastPublishTime = millis();
    }
 }
