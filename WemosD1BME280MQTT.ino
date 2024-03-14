@@ -244,7 +244,7 @@ void mqttConnect()
    }
 } // End of mqttConnect() function.
 
-void infiniteLoop()
+[[noreturn]] void infiniteLoop()
 {
    while( true )
       delay( 10 );
