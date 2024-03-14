@@ -40,6 +40,7 @@ float pressureHpa              = 21.12F;
 float altitudeMeters           = 21.12F;
 float humidity                 = 21.12F;
 
+
 /**
  * @brief readTelemetry() will read the telemetry and save values to global variables.
  */
@@ -52,6 +53,7 @@ void pollTelemetry()
    altitudeMeters = bme280.readAltitude( seaLevelPressureHpa );
    humidity       = bme280.readHumidity();
 } // End of readTelemetry() function.
+
 
 /**
  * @brief lookupWifiCode() will return the string for an integer code.
@@ -78,6 +80,7 @@ String lookupWifiCode( int code )
          return "Unknown Wi-Fi status code";
    }
 } // End of lookupWifiCode() function.
+
 
 /**
  * @brief lookupMQTTCode() will return the string for an integer state code.
@@ -111,6 +114,10 @@ String lookupMQTTCode( int code )
    }
 } // End of lookupMQTTCode() function.
 
+
+/**
+ * @brief printTelemetry() will print the telemetry to the serial port.
+ */
 void printTelemetry()
 {
    Serial.println();
@@ -158,8 +165,12 @@ void printTelemetry()
    Serial.printf( "Humidity: %.2f %%\n", humidity );
    Serial.printf( "Altitude: %.1f m\n", altitudeMeters );
    Serial.println();
-}
+} // End of the printTelemetry() function.
 
+
+/**
+ * @brief publishTelemetry() will publish telemetry to the MQTT broker.
+ */
 void publishTelemetry()
 {
    // Load the latest values into Strings.
@@ -176,7 +187,8 @@ void publishTelemetry()
    mqttClient.publish( pressureTopic.c_str(), pressureValue.c_str() );
    mqttClient.publish( humidityTopic.c_str(), humidityValue.c_str() );
    mqttClient.publish( altitudeTopic.c_str(), altitudeValue.c_str() );
-}
+} // End of the publishTelemetry() function.
+
 
 /**
  * @brief wifiBasicConnect() will connect to a SSID.
@@ -213,13 +225,15 @@ void wifiBasicConnect()
    }
    else
       Serial.println( "Wi-Fi failed to connect in the timeout period.\n" );
-} // End of wifiBasicConnect() function.
+} // End of the wifiBasicConnect() function.
+
 
 /**
  * @brief mqttConnect() will connect to the MQTT broker.
  */
 void mqttConnect()
 {
+  Serial.println( "mqttConnect()" );
    // Connect the first time.  Avoid subtraction overflow.  Connect after cool down.
    if( lastBrokerConnect == 0 || ( millis() - lastBrokerConnect ) > brokerCoolDown )
    {
@@ -242,9 +256,12 @@ void mqttConnect()
       mqttClient.subscribe( "led1" );
       digitalWrite( ONBOARD_LED, HIGH );
    }
-} // End of mqttConnect() function.
+} // End of the mqttConnect() function.
 
 
+/**
+ * @brief infiniteLoop() is a way to put the MCU into a blocking state.
+ */
 void infiniteLoop()
 {
 #pragma clang diagnostic push
@@ -252,7 +269,7 @@ void infiniteLoop()
    while( true )
       delay( 10 );
 #pragma clang diagnostic pop
-}
+} // End of the infiniteLoop() function.
 
 
 /**
@@ -265,10 +282,12 @@ void toggleLED()
       digitalWrite( ONBOARD_LED, 1 );
    else
       digitalWrite( ONBOARD_LED, 0 );
-} // End of toggleLED() function.
+} // End of the toggleLED() function.
 
 
-
+/**
+ * @brief setup() executes once at boot up.
+ */
 void setup()
 {
    // Give time to connect to serial after a flash.
@@ -280,7 +299,9 @@ void setup()
    Serial.println();
    Serial.println( "BME280 test" );
 
+   Serial.println( "Initializing the BME280..." );
    unsigned status = bme280.begin( 0x76 );
+   Serial.println( "BME280 initialization complete!" );
    if( !status )
    {
       Serial.println( "Could not find a valid BME280 sensor, check wiring, address, sensor ID!" );
@@ -294,15 +315,29 @@ void setup()
       Serial.println( "Going into an infinite delay loop!" );
       infiniteLoop();
    }
-   Serial.println();
-}
 
+   wifiBasicConnect();
+
+   Serial.println( "Setup complete!" );
+} // End of the setup() function.
+
+
+/**
+ * @brief loop() repeatedly executes as long as the device is powered.
+ */
 void loop()
 {
+  Serial.print( "~" );
    if( wifiClient.status() != WL_CONNECTED )
-      wifiBasicConnect();
+   {
+     Serial.println( "Reconnecting to Wi-Fi." );
+    wifiBasicConnect();
+   }
    else if( !mqttClient.connected() )
-      mqttConnect();
+   {
+     Serial.println( "Connecting to MQTT." );
+    mqttConnect();
+   }
    else
       mqttClient.loop();
 
@@ -335,4 +370,4 @@ void loop()
          digitalWrite( ONBOARD_LED, 0 ); // Turn the LED off to show that Wi-Fi is not connected.
       lastLedBlinkTime = millis();
    }
-}
+} // End of the loop() function.
