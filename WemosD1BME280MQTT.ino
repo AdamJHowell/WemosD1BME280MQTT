@@ -244,11 +244,30 @@ void mqttConnect()
    }
 } // End of mqttConnect() function.
 
-[[noreturn]] void infiniteLoop()
+
+void infiniteLoop()
 {
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "EndlessLoop"
    while( true )
       delay( 10 );
+#pragma clang diagnostic pop
 }
+
+
+/**
+ * @brief toggleLED() will change the state of the LED.
+ * This function does not manage any timings.
+ */
+void toggleLED()
+{
+   if( digitalRead( ONBOARD_LED ) != 1 )
+      digitalWrite( ONBOARD_LED, 1 );
+   else
+      digitalWrite( ONBOARD_LED, 0 );
+} // End of toggleLED() function.
+
+
 
 void setup()
 {
@@ -301,5 +320,19 @@ void loop()
    {
       publishTelemetry();
       lastPublishTime = millis();
+   }
+   if( lastLedBlinkTime == 0 || ( ( millis() - lastLedBlinkTime ) > ledBlinkInterval ) )
+   {
+      // If Wi-Fi is connected, but MQTT is not, blink the LED.
+      if( wifiClient.status() == WL_CONNECTED )
+      {
+         if( mqttClient.state() != 0 )
+            toggleLED();						  // Toggle the LED state to show that Wi-Fi is connected but MQTT is not.
+         else
+            digitalWrite( ONBOARD_LED, 1 ); // Turn the LED on to show both Wi-Fi and MQTT are connected.
+      }
+      else
+         digitalWrite( ONBOARD_LED, 0 ); // Turn the LED off to show that Wi-Fi is not connected.
+      lastLedBlinkTime = millis();
    }
 }
