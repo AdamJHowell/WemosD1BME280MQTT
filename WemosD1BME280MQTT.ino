@@ -1,5 +1,5 @@
-#include <PubSubClient.h>
 #include "privateInfo.h"
+#include <PubSubClient.h>
 #include <Adafruit_BME280.h>
 #include <Adafruit_Sensor.h>
 #include <ESP8266WiFi.h> // ESP8266 WiFi support.  https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WiFi
