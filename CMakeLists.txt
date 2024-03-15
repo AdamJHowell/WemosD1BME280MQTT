@@ -11,12 +11,12 @@ include_directories(
     "C:/Users/Adam/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/3.1.2/tools/sdk/lwip2/include"
     "C:/Users/Adam/Documents/Arduino/libraries/Adafruit_Unified_Sensor"
     "C:/Users/Adam/Documents/Arduino/libraries/Adafruit_BME280_Library"
+    "C:/Users/Adam/Documents/Arduino/libraries/PubSubClient/src"
 )
 
 add_executable(
     WemosD1BME280MQTT
     WemosD1BME280MQTT.ino
-    PubSubClient.cpp
     privateInfo.h
 )
 

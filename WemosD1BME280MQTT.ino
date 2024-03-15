@@ -1,4 +1,4 @@
-#include "PubSubClient.h"
+#include <PubSubClient.h>
 #include "privateInfo.h"
 #include <Adafruit_BME280.h>
 #include <Adafruit_Sensor.h>
@@ -146,12 +146,12 @@ void printTelemetry()
    Serial.printf( "  MQTT state: %s\n", mqttStateString.c_str() );
    if( mqttClient.connected() )
    {
-      Serial.print( "  MQTT broker domain: " );
-      Serial.println( mqttClient.getServerDomain() );
-      Serial.print( "  MQTT broker IP: " );
-      Serial.println( mqttClient.getServerIP() );
-      Serial.print( "  MQTT broker port: " );
-      Serial.println( mqttClient.getServerPort() );
+      // Serial.print( "  MQTT broker domain: " );
+      // Serial.println( mqttClient.getServerDomain() );
+      // Serial.print( "  MQTT broker IP: " );
+      // Serial.println( mqttClient.getServerIP() );
+      // Serial.print( "  MQTT broker port: " );
+      // Serial.println( mqttClient.getServerPort() );
    }
 
    tempC          = bme280.readTemperature();
