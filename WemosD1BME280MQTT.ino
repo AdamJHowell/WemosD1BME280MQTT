@@ -1,14 +1,15 @@
 #include "privateInfo.h"
-#include <PubSubClient.h>
 #include <Adafruit_BME280.h>
 #include <Adafruit_Sensor.h>
 #include <ESP8266WiFi.h> // ESP8266 WiFi support.  https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WiFi
+#include <PubSubClient.h>
 #include <Wire.h>
 
 
 Adafruit_BME280 bme280;
 WiFiClient wifiClient;
 PubSubClient mqttClient( wifiClient );
+
 
 const float seaLevelPressureHpa     = 1013.25;
 const unsigned int printInterval    = 10000; // How long to wait between stat printouts.
@@ -18,7 +19,7 @@ unsigned long lastPollTime          = 0;     // The last time a telemetry poll w
 const unsigned int publishInterval  = 20000; // How long to wait between publishing telemetry.
 unsigned long lastPublishTime       = 0;     // The last time a telemetry publish was performed.
 unsigned long lastBrokerConnect     = 0;     // The last time a MQTT broker connection was attempted.
-unsigned long brokerCoolDown        = 7000;  // How long to wait between MQTT broker connection attempts.
+unsigned long brokerCoolDown        = 7000;  // The minimum time between MQTT broker connection attempts.
 unsigned long wifiConnectionTimeout = 15000; // The amount of time to wait for a Wi-Fi connection.
 char ipAddress[16];                          // A character array to hold the IP address.
 char macAddress[18];                         // A character array to hold the MAC address, and append a dash and 3 numbers.
@@ -216,6 +217,10 @@ void wifiBasicConnect()
 
    if( WiFi.status() == WL_CONNECTED )
    {
+      Serial.print( "wifiClient.status(): " );
+      Serial.println( wifiClient.status() );
+      Serial.print( "WL_CONNECTED: " );
+      Serial.println( WL_CONNECTED );
       // Print that Wi-Fi has connected.
       Serial.println( "\nWi-Fi connection established!" );
       snprintf( ipAddress, 16, "%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3] );
@@ -233,17 +238,17 @@ void wifiBasicConnect()
  */
 void mqttConnect()
 {
-  Serial.println( "mqttConnect()" );
-   // Connect the first time.  Avoid subtraction overflow.  Connect after cool down.
+   // Connect the first time.  Connect after cool down.
    if( lastBrokerConnect == 0 || ( millis() - lastBrokerConnect ) > brokerCoolDown )
    {
+      Serial.println( "  mqttConnect()" );
       lastBrokerConnect = millis();
       digitalWrite( ONBOARD_LED, LOW );
-      Serial.printf( "Connecting to broker at %s:%d...\n", BROKER_IP, port );
+      Serial.printf( "  Connecting to broker at %s:%d...\n", BROKER_IP, port );
       mqttClient.setServer( BROKER_IP, port );
 
       if( mqttClient.connect( macAddress ) )
-         Serial.print( "Connected to MQTT Broker.\n" );
+         Serial.print( "  Connected to MQTT Broker.\n" );
       else
       {
          int mqttStateCode      = mqttClient.state();
@@ -327,16 +332,28 @@ void setup()
  */
 void loop()
 {
-  Serial.print( "~" );
-   if( wifiClient.status() != WL_CONNECTED )
+   //  Serial.println( "~" );
+   if( WiFi.status() != WL_CONNECTED )
    {
-     Serial.println( "Reconnecting to Wi-Fi." );
-    wifiBasicConnect();
+      Serial.println( "Reconnecting to Wi-Fi." );
+      wifiBasicConnect();
    }
    else if( !mqttClient.connected() )
    {
-     Serial.println( "Connecting to MQTT." );
-    mqttConnect();
+      Serial.println( "\n" );
+      Serial.println( "Reconnecting to the MQTT broker." );
+
+      int mqttState = mqttClient.state();
+      Serial.printf( "  mqttClient.state(): %d\n", mqttState );
+      String mqttStateString = lookupMQTTCode( mqttState );
+
+      Serial.printf( "  MQTT state string: %s\n", mqttStateString.c_str() );
+
+      Serial.printf( "  mqttClient.connected(): %d\n", mqttClient.connected() );
+
+      delay( 3000 );
+      mqttConnect();
+      delay( 1000 );
    }
    else
       mqttClient.loop();
@@ -362,12 +379,12 @@ void loop()
       if( wifiClient.status() == WL_CONNECTED )
       {
          if( mqttClient.state() != 0 )
-            toggleLED();						  // Toggle the LED state to show that Wi-Fi is connected but MQTT is not.
+            toggleLED();                    // Toggle the LED state to show that Wi-Fi is connected but MQTT is not.
          else
             digitalWrite( ONBOARD_LED, 1 ); // Turn the LED on to show both Wi-Fi and MQTT are connected.
       }
       else
-         digitalWrite( ONBOARD_LED, 0 ); // Turn the LED off to show that Wi-Fi is not connected.
+         digitalWrite( ONBOARD_LED, 0 );    // Turn the LED off to show that Wi-Fi is not connected.
       lastLedBlinkTime = millis();
    }
-} // End of the loop() function.
+}                                           // End of the loop() function.
