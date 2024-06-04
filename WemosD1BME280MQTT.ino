@@ -269,11 +269,15 @@ void mqttConnect()
  */
 void infiniteLoop()
 {
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "EndlessLoop"
-   while( true )
-      delay( 10 );
-#pragma clang diagnostic pop
+// #pragma clang diagnostic push
+// #pragma ide diagnostic ignored "EndlessLoop"
+  while( true )
+  {
+    delay( 100 );
+    // Serial.println( "Blink!" );
+    toggleLED();
+  }
+// #pragma clang diagnostic pop
 } // End of the infiniteLoop() function.
 
 
